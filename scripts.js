@@ -1,6 +1,7 @@
 var api = 'http://10.8.66.4/LTSApi/api/interferences?days=';
 var days = 1;
 var data = null;
+var rawData = null;
 var responsibles = null;
 var dataSeries = null;
 
@@ -12,30 +13,46 @@ var dataSeries = null;
 
 window.onload = () => {
 
-    request(api + days, (err, response) => {
+    // request(api + days, (err, response) => {
+    request('http://localhost:3000/samples/request.json', (err, response) => {
         if (!errorCheck(err)) {
-            data = JSON.parse(response);
-            responsibles = Object.values(groupBy(data, 'Responsible'))
-                .map((r, i) => r.filter(f => f.isProcessStopTime));
+            rawData = JSON.parse(response);
+            responsibles = Object.values(groupBy(rawData, 'Responsible'))
+                .map((r, i) => r.filter(f => f.isProcessStopTime))
+                .map(r => {
+                    r.map(d => {
+                        d["Date"] = d.TimeStamp.slice(0, 10);
+                        d["TimeAmountMS"] = timeToMs(d.TimeAmount);
+                    });
+                    return Object.values(groupBy(r, "Date"));
+                });
+            console.log(responsibles);
+                
+            dataSeries = responsibles.map( resp => {
+                return new DataSerie(resp);
+            });
+            // responsibles = responsibles.map(r => {
+            //     r.map(d => d["Date"] = d.TimeStamp.slice(0, 10));
+            //     return Object.values(groupBy(r, "Date"));
+            // });
 
-            responsibles = responsibles.map(r => {
-                r.map(d => d["Date"] = d.TimeStamp.slice(0, 10));
-                return Object.values(groupBy(r, "Date"));
-            });
-            
-            responsibles.map( r => {
-                dataSeries.push(new DataSerie(r));
-            });
-            
+            // responsibles.map( r => {
+            //     dataSeries.push(new DataSerie(r));
+            // });
+
         }
     });
 }
 
 function DataSerie(dataSerie) {
-    this.name = dataSerie.Responsible;
+    this.name = dataSerie[0][0].Responsible;
     this.type = "spline";
-    this.showInLegend = true;    
-    this.dataPoints = dataSerie.map( ds => )
+    this.showInLegend = true;
+    this.dataPoints = dataSerie.map( days => {        
+        return { x: days[0].TimeStamp}
+    });
+    
+    // this.dataPoints = dataSerie.map( ds => )
 }
 
 
@@ -81,6 +98,13 @@ function sumTimes(times) {
     return msToTime(ms);
 }
 
+function timeToMs(time) {
+    let ms = 0;
+    ms += (time.split(':')[0] * 3600000)
+    ms += (time.split(':')[1] * 60000)
+    return ms += (time.split(':')[2] * 1000)    
+}
+
 function msToTime(duration) {
     var milliseconds = parseInt((duration % 1000) / 100)
         , seconds = parseInt((duration / 1000) % 60)
@@ -98,20 +122,19 @@ function msToTime(duration) {
 
 data: [
     {
-    name: "Myrtle Beach",
-    type: "spline",
-    yValueFormatString: "#0.## °C",
-    showInLegend: true,
-    dataPoints: [
-        { x: new Date(3660000), y: 0 },
-        // { x: new Date(2017, 6, 24), y: 31 },
-        // { x: new Date(2017, 6, 24), y: 32 },
-        // { x: new Date(2017, 6, 24), y: 12 },                
-        // { x: new Date(2017, 6, 25), y: 31 },
-        // { x: new Date(2017, 6, 26), y: 29 },
-        // { x: new Date(2017, 6, 27), y: 29 },
-        // { x: new Date(2017, 6, 28), y: 31 },
-        // { x: new Date(2017, 6, 29), y: 30 },
-        // { x: new Date(2017, 6, 30), y: 29 }
-    ]
-},
+        name: "Myrtle Beach",
+        type: "spline",
+        yValueFormatString: "#0.## °C",
+        showInLegend: true,
+        dataPoints: [
+            { x: new Date(2017, 6, 24), y: 31 },
+            { x: new Date(2017, 6, 24), y: 32 },
+            { x: new Date(2017, 6, 24), y: 12 },
+            { x: new Date(2017, 6, 25), y: 31 },
+            { x: new Date(2017, 6, 26), y: 29 },
+            { x: new Date(2017, 6, 27), y: 29 },
+            { x: new Date(2017, 6, 28), y: 31 },
+            { x: new Date(2017, 6, 29), y: 30 },
+            { x: new Date(2017, 6, 30), y: 29 }
+        ]
+    }]

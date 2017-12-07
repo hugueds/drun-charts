@@ -6,11 +6,14 @@ function generateChart(series) {
             text: "Interferências"
         },
         axisX: {
-            valueFormatString: "HH mm:ss"
+            // valueFormatString: "HH mm:ss"
         },
         axisY: {
-            title: "",
-            includeZero: false
+            title: "PARANAUE",
+            includeZero: false,
+            labelFormatter: function(e) {
+                // console.log(e)
+            }
         },
         legend: {
             cursor: "pointer",
@@ -23,10 +26,12 @@ function generateChart(series) {
         data: [{
             name: "Myrtle Beach",
             type: "spline",
-            yValueFormatString: "#0.## °C",
+            //yValueFormatString:  function() {  return msToTime("x: ##")},
             showInLegend: true,
-            dataPoints: [
-                { x: new Date(3660000), y: 0 },
+            dataPoints: [                
+                {x: 1, y: "00:00:01"},
+                {x: 2, y: "00:00:01"},
+                {x: 3, y: "00:01:01"}
                 // { x: new Date(2017, 6, 24), y: 31 },
                 // { x: new Date(2017, 6, 24), y: 32 },
                 // { x: new Date(2017, 6, 24), y: 12 },                
@@ -69,6 +74,19 @@ function generateChart(series) {
             ]
         }]
     });
+
+    function msToTime(duration) {
+        var milliseconds = parseInt((duration % 1000) / 100)
+            , seconds = parseInt((duration / 1000) % 60)
+            , minutes = parseInt((duration / (1000 * 60)) % 60)
+            , hours = parseInt((duration / (1000 * 60 * 60)) % 24);
+    
+        hours = (hours < 10) ? "0" + hours : hours;
+        minutes = (minutes < 10) ? "0" + minutes : minutes;
+        seconds = (seconds < 10) ? "0" + seconds : seconds;
+    
+        return hours + ":" + minutes + ":" + seconds;
+    }
 
     function toggleDataSeries(e) {
         if (typeof (e.dataSeries.visible) === "undefined" || e.dataSeries.visible) {

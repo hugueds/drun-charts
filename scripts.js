@@ -16,21 +16,24 @@ window.onload = () => {
     // request(api + days, (err, response) => {
     request('http://localhost:3000/samples/request.json', (err, response) => {
         if (!errorCheck(err)) {
-            rawData = JSON.parse(response);
+            rawData = JSON.parse(response).sort((a,b) => a.TimeStamp - b.TimeStamp);
+            console.log(rawData);
+            
             responsibles = Object.values(groupBy(rawData, 'Responsible'))
                 .map((r, i) => r.filter(f => f.isProcessStopTime))
                 .map(r => {
                     r.map(d => {
                         d["Date"] = d.TimeStamp.slice(0, 10);
                         d["TimeAmountMS"] = timeToMs(d.TimeAmount);
-                    });
+                    });                    
                     return Object.values(groupBy(r, "Date"));
-                });
-            console.log(responsibles);
+                });           
                 
             dataSeries = responsibles.map( resp => {
                 return new DataSerie(resp);
             });
+
+            generateChart(dataSeries)
             // responsibles = responsibles.map(r => {
             //     r.map(d => d["Date"] = d.TimeStamp.slice(0, 10));
             //     return Object.values(groupBy(r, "Date"));
@@ -48,9 +51,12 @@ function DataSerie(dataSerie) {
     this.name = dataSerie[0][0].Responsible;
     this.type = "spline";
     this.showInLegend = true;
-    this.dataPoints = dataSerie.map( days => {        
-        return { x: days[0].TimeStamp}
-    });
+    this.dataPoints = dataSerie.map( days => {
+        var times = [];
+        days.map( a => times.push(a.TimeAmountMS))
+        return { x: new Date(days[0].TimeStamp), y: times.reduce((a,b)=> a+b)}
+    }).sort((a,b) => a.x - b.x);
+    console.log((this));
     
     // this.dataPoints = dataSerie.map( ds => )
 }

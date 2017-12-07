@@ -72,4 +72,27 @@ function updateChart() {
     });
 }
 
+function updateObjective() {
+    console.log(document.getElementById('target-minute').value)
+    let min = parseInt(document.getElementById('target-minute').value) * 60 * 1000 || 0;
+    let sec = parseInt(document.getElementById('target-second').value)  * 1000 || 0;
+    let ms = min + sec;
+    chart.axisY[0].stripLines[0].set('value',ms);
+}
+
+var inputs = document.getElementsByTagName('input');
+
+for (var i = 0; i < inputs.length; i++) {
+    inputs[i].addEventListener('input', (e) => {
+        let target = e.target.value
+        if ( target > 59) {
+            e.target.value = 59;
+        }
+    });
+}
+
+
+
+
+
 

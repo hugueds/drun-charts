@@ -6,18 +6,29 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
     <title>Interferências</title>
+    <link rel="stylesheet" href="style/style.css">
 </head>
 
 <body>
 
-    <div>
-        <label for="select-days">DIAS</label>
-        <select name="days" id="select-days">
-            <option value="7">7</option>
-            <option value="15">15</option>
-            <option value="30">30</option>
-        </select>
-        <button onclick="updateChart()">BUSCAR</button>
+    <div class="wrapper">
+        <div class="box">
+            <label for="select-days">DIAS</label>
+            <select name="days" id="select-days">
+                <option value="7">7</option>
+                <option value="15">15</option>
+                <option value="30">30</option>
+                <option value="60">60</option>
+            </select>
+            <button onclick="updateChart()">BUSCAR</button>
+        </div>
+        <div class="box">
+            <label for="select-objective">OBJETIVO</label>
+            <input min="0" max="59" type="number" name="" id="target-minute" placeholder="MM"/> 
+            <span>:</span>
+            <input min="0" max="59" type="number" name="" id="target-second" placeholder="SS" />
+            <button onclick="updateObjective()">Atualizar</button>
+        </div>
     </div>
 
     <div id="chartContainer" style="height: 38rem; max-width: 920px; margin: 0px auto;"></div>

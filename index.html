@@ -1,21 +1,35 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
     <title>Interferências</title>
 </head>
+
 <body>
-    
-<div id="chartContainer" style="height: 370px; max-width: 920px; margin: 0px auto;"></div>
+
+    <div>
+        <label for="select-days">DIAS</label>
+        <select name="days" id="select-days">
+            <option value="7">7</option>
+            <option value="15">15</option>
+            <option value="30">30</option>
+        </select>
+        <button onclick="updateChart()">BUSCAR</button>
+    </div>
+
+    <div id="chartContainer" style="height: 38rem; max-width: 920px; margin: 0px auto;"></div>
 
 
-<script src="lib/canvasjs.min.js" ></script>
 
-<script src="chartRender.js" ></script>
-<script src="scripts.js" ></script>
+    <script src="lib/canvasjs.min.js"></script>
+    <script src="js/utils.js"></script>
+    <script src="js/chartRender.js"></script>
+    <script src="js/scripts.js"></script>
 
 
 </body>
+
 </html>

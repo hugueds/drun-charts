@@ -20,18 +20,24 @@
                 <option value="30">30</option>
                 <option value="60">60</option>
             </select>
-            <button onclick="updateChart()">BUSCAR</button>
+            <button class="button" onclick="updateChart()">BUSCAR</button>
         </div>
         <div class="box">
             <label for="select-objective">OBJETIVO</label>
-            <input min="0" max="59" type="number" name="" id="target-minute" placeholder="MM"/> 
+            <input min="0" max="59" type="number" name="" id="target-minute" placeholder="MM" />
             <span>:</span>
             <input min="0" max="59" type="number" name="" id="target-second" placeholder="SS" />
-            <button onclick="updateObjective()">Atualizar</button>
+            <button class="button" onclick="updateObjective()">Atualizar</button>
         </div>
     </div>
 
     <div id="chartContainer" style="height: 38rem; max-width: 920px; margin: 0px auto;"></div>
+
+    <div style="width:100%; margin: 0 auto; display: flex; justify-content: center;">
+        <button class="button" onclick="downloadChart()">Baixar</button>
+        <button class="button" onclick="printChart()">Imprimir</button>
+    </div>
+
 
 
 

@@ -1,6 +1,7 @@
 var chart;
 function generateChart(series) {
     chart = new CanvasJS.Chart("chartContainer", {
+        theme : 'light2',
         animationEnabled: true,
         title: {
             text: "Interferências"

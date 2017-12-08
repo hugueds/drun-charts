@@ -4,6 +4,7 @@ var data = null;
 var rawData = null;
 var responsibles = null;
 var dataSeries = null;
+var inputs = document.getElementsByTagName('input');
 
 // Verificar se é process Stop Time
 // Se for 1 dia agrupar por hora, se for 7 dias agrupar por dias
@@ -19,6 +20,7 @@ function DataSerie(dataSerie) {
         this.name = dataSerie[0][0].Responsible        
     }
     this.type = "line";
+    this.visible = false;
     this.showInLegend = true;    
     this.dataPoints = dataSerie.map( days => {        
         let times = [];    
@@ -80,7 +82,15 @@ function updateObjective() {
     chart.axisY[0].stripLines[0].set('value',ms);
 }
 
-var inputs = document.getElementsByTagName('input');
+function downloadChart() {
+    let fileName = new Date().toISOString().slice(0,10);    
+    chart.exportChart({ format: String("jpg"), fileName: fileName})
+}
+
+function printChart() {
+    chart.print();
+}
+
 
 for (var i = 0; i < inputs.length; i++) {
     inputs[i].addEventListener('input', (e) => {

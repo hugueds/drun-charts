@@ -1,7 +1,7 @@
 var chart;
 function generateChart(series) {
     chart = new CanvasJS.Chart("chartContainer", {
-        theme : 'light2',
+        theme : 'light1',        
         animationEnabled: true,
         title: {
             text: "Interferências"
@@ -16,12 +16,12 @@ function generateChart(series) {
         axisY: {
             title: "Tempo de Parada",             
             tickLength: 15,            
-            gridThickness: 2,        
+            gridThickness: 2,
             includeZero: true,
             stripLines:[
                 {                
-                    value:3200000,
-                    thickness:2
+                    value:1771000,
+                    thickness:3
                 }],
             labelFormatter: function(e) {
                 return msToTime(e.value)            
@@ -41,8 +41,7 @@ function generateChart(series) {
         toolTip: {
             animationEnabled: true,
             shared: false,
-            contentFormatter: function(e) {     
-             //    return msToTime(e.entries[0].dataPoint.y);               
+            contentFormatter: function(e) {                             
                 let time = msToTime(e.entries[0].dataPoint.y)
                 return (e.entries[0].dataSeries.name) + ': ' + time;       
             }
@@ -52,6 +51,7 @@ function generateChart(series) {
    
 
     function toggleDataSeries(e) {
+        console.log(e)
         if (typeof (e.dataSeries.visible) === "undefined" || e.dataSeries.visible) {
             e.dataSeries.visible = false;
         }

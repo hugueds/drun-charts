@@ -1,7 +1,7 @@
 function request(url, callback) {
     var xhr = new XMLHttpRequest();
     xhr.open('GET', url, true);
-    xhr.onreadystatechange = () => {
+    xhr.onreadystatechange = function() {
         var DONE = 4;
         var OK = 200;
         if (xhr.readyState === DONE) {

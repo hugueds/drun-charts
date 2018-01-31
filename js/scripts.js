@@ -4,6 +4,7 @@ var line = null;
 var data = null;
 var rawData = null;
 var responsibles = null;
+var functionStopTime = null;
 var dataSeries = null;
 var inputs = document.getElementsByTagName('input');
 var groups = document.getElementById("select-group");
@@ -18,27 +19,30 @@ var interferenceGroups = {
     "Logística": ["LOG MP", "LOG MH"],
     "Manutenção": ["MAN ROF", "MAN EQ"],
     "Fabricas": ["MOT", "CAB", "TRANSM"],
-    "Outros": ["IT SLA", "ENG PR"]
+    "Outros": ["IT SLA", "ENG PR", "ENG PP"]
 };
 
-// Se for 1 dia agrupar por hora, se for 7 dias agrupar por dias
+var filteredData
 
 window.onload = function () {
-    getServerData(days, line.value = 0, function (dataSeries) {
-        generateChart(dataSeries);
+    getServerData(days, function (err, data) {
+        if (err)
+            return console.error(err);
+        rawData = JSON.parse(data);
+        generateDataSeries(rawData, line.value = 0, generateChart);
+        filteredData = filterStopTime(rawData);
+        filterByFunction(rawData);
     });
-    for (var key in interferenceGroups) {
-        var option = document.createElement("OPTION");
-        option.value = key;
-        option.textContent = key;
-        groups.appendChild(option);
-    }    
+    generateOptions();
+
 }
 
 function DataSerie(dataSerie) {
     if (dataSerie[0]) {
+        if (dataSerie[0][0].Responsible == "IND") // Remove caso seja IND como responsável
+            return;
         this.name = dataSerie[0][0].Responsible;
-    }
+    }    
     this.type = "line";
     this.visible = true;
     this.showInLegend = true;
@@ -49,26 +53,28 @@ function DataSerie(dataSerie) {
     }).sort(function (a, b) { return (a.x - b.x) });
 }
 
-function getServerData(days, line, callback) {
+function getServerData(days, callback) {
     request(api + days, function (err, response) {
-        if (!errorCheck(err)) {
-            rawData = JSON.parse(response);
-            responsibles = orderByResponsible(rawData)
-                .map(function (r) { return filterStopTime(r) })
-                .map(function(r) {                    
-                    if (parseInt(line)) {
-                        return filterLine(r, line)
-                    }
-                    return r;
-                })
-                .map(function (r) {
-                    generateDateTime(r);
-                    return Object.values(groupBy(r, "Date"));
-                });
-            dataSeries = responsibles.map(function (resp) { return new DataSerie(resp) });
-            callback(dataSeries);
-        }
+        if (err)
+            return callback(err);
+        return callback(null, response);
     });
+}
+
+function generateDataSeries(data, line, callback) {
+    responsibles = orderByResponsible(data)
+        .map(function (r) { return filterStopTime(r) })
+        .map(function (r) {
+            if (parseInt(line))
+                return filterLine(r, line)
+            return r;
+        })
+        .map(function (r) {
+            generateDateTime(r);
+            return Object.values(groupBy(r, "Date"));
+        });
+    dataSeries = responsibles.map(function (resp) { return new DataSerie(resp) });
+    callback(dataSeries);
 }
 
 function orderByResponsible(data) {
@@ -76,23 +82,27 @@ function orderByResponsible(data) {
 }
 
 function filterStopTime(data) {
-     return data.filter(function (f) { return f.isProcessStopTime });    
+    return data.filter(function (f) { return f.isProcessStopTime });
+}
+
+function filterProcessAndStopTime(data) {
+    return data.filter(function (f) { return f.isProcessStopTime || f.isStopTime });
 }
 
 function filterLine(data, line) {
-    return data.filter(function (f) { return f.ProcessId == line });    
+    return data.filter(function (f) { return f.ProcessId == line });
 }
 
 function selectGroup() {
     if (groups.value == "Todos") {
-        updateChart();
+        updateChartDays();
         return;
     }
-    var selected = interferenceGroups[groups.value];    
+    var selected = interferenceGroups[groups.value];
     dataSeries.forEach(function (element) {
         for (var i = 0; i < selected.length; i++) {
             if (element.name == selected[i]) {
-                element.visible = true;                
+                element.visible = true;
                 break;
             }
             element.visible = false;
@@ -105,6 +115,10 @@ function groupByDate(data) {
 
 }
 
+function groupByFunction(data) {
+    console.log(Object.values(groupBy(data, "StationDescription")));
+}
+
 function generateDateTime(data) {
     return data.map(function (d) {
         d["Date"] = d.TimeStamp.slice(0, 10);
@@ -112,21 +126,27 @@ function generateDateTime(data) {
     });
 }
 
-function updateChart() {
+function updateChartDays() {
     groups.value = "Todos";
-    getServerData(day.value, line.value = 0, function (dataSeries) {
-        generateChart(dataSeries);
+    getServerData(day.value, function (err, data) {
+        if (err)
+            return console.error(err);
+        rawData = JSON.parse(data);
+        generateDataSeries(rawData, line.value, generateChart);
     });
 }
 
 function updateLine() {
     groups.value = "Todos";
-    getServerData(day.value, line.value, function (dataSeries) {
-        generateChart(dataSeries);
+    getServerData(day.value,  function (err, data) {
+        if (err)
+            return console.error(err);
+        rawData = JSON.parse(data);
+        generateDataSeries(rawData, line.value, generateChart);
     });
 }
 
-function updateObjective() {    
+function updateObjective() {
     var min = parseInt(document.getElementById('target-minute').value) * 60 * 1000 || 0;
     var sec = parseInt(document.getElementById('target-second').value) * 1000 || 0;
     var ms = min + sec;
@@ -137,7 +157,7 @@ function toggleSelection() {
     dataSeries.forEach(function (element) {
         element.visible = !element.visible;
     });
-    chart.render();    
+    chart.render();
 }
 
 function downloadChart() {
@@ -147,6 +167,15 @@ function downloadChart() {
 
 function printChart() {
     chart.print();
+}
+
+function generateOptions() {
+    for (var key in interferenceGroups) {
+        var option = document.createElement("OPTION");
+        option.value = key;
+        option.textContent = key;
+        groups.appendChild(option);
+    }
 }
 
 
@@ -159,3 +188,17 @@ for (var i = 0; i < inputs.length; i++) {
     });
 }
 
+function filterByFunction(data) {
+    var pattern = /FA(\d[\s\.]\d?)\s?P\d/;
+    data.map(function (d) {
+        if (d.CellDescription == "FA0") {
+            d.Function = "FA0";
+        }
+        else if (pattern.test(d.StationDescription)) {
+            d.Function = d.StationDescription.match(pattern)[1].replace(" ", "");
+        }
+    });        
+    filteredData = Object.values(groupBy(data, "Function"))
+    console.log(filteredData)
+    return filteredData;
+}

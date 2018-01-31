@@ -21,10 +21,18 @@
     color: white;
 }
 
+.button:active {
+    background-color: darkblue;
+}
+
 .toggle {
     width: 10rem;
     font-size: 1rem;
     background-color: darkorange;
+}
+
+.toggle:active{
+    background-color: brown;
 }
 
 input[placeholder] {

@@ -22,7 +22,7 @@ var interferenceGroups = {
     "Outros": ["IT SLA", "ENG PR", "ENG PP"]
 };
 
-var filteredData
+var filteredData;
 
 window.onload = function () {
     getServerData(days, function (err, data) {
@@ -30,27 +30,47 @@ window.onload = function () {
             return console.error(err);
         rawData = JSON.parse(data);
         generateDataSeries(rawData, line.value = 0, generateChart);
-        filteredData = filterStopTime(rawData);
-        filterByFunction(rawData);
+        filteredData = filterResponsible(rawData, "IND");
+        filteredData = groupByFunction(filteredData);
+        console.log(filteredData);
+        let series = new BarDataSerie(filteredData);
+        generateStopTimeChart(series);        
     });
     generateOptions();
 
 }
 
 function DataSerie(dataSerie) {
-    if (dataSerie[0]) {
-        if (dataSerie[0][0].Responsible == "IND") // Remove caso seja IND como responsável
-            return;
-        this.name = dataSerie[0][0].Responsible;
-    }    
+    this.name = dataSerie[0][0].Responsible;
     this.type = "line";
     this.visible = true;
     this.showInLegend = true;
     this.dataPoints = dataSerie.map(function (days) {
         let times = [];
         days.map(function (a) { times.push(a.TimeAmountMS) });
-        return { x: new Date(days[0].TimeStamp), y: times.reduce(function (a, b) { return (a + b) }) }
-    }).sort(function (a, b) { return (a.x - b.x) });
+        return { 
+            x: new Date(days[0].TimeStamp), 
+            y: times.reduce(function (a, b) { return (a + b) }) }})
+                    .sort(function (a, b) { return (a.x - b.x) });
+}
+
+function BarDataSerie(data) {
+    this.type = "column";
+    this.showInLegend = true;
+    this.legendMarkColor = "Funções";
+    this.dataPoints = generateBarDataSeries(data);
+}
+
+function generateBarDataSeries(data) {
+    return data.map(f => {
+        let times = [];
+        times.push(f.TimeAmountMS)        
+        return {
+            label: f[0].Function,
+            y: 100 // times.reduce((a, b) => a.TimeAmountMS + b.TimeAmountMS)
+        }
+        
+    });
 }
 
 function getServerData(days, callback) {
@@ -62,6 +82,7 @@ function getServerData(days, callback) {
 }
 
 function generateDataSeries(data, line, callback) {
+    data = filterResponsible(data, "IND");
     responsibles = orderByResponsible(data)
         .map(function (r) { return filterStopTime(r) })
         .map(function (r) {
@@ -93,6 +114,10 @@ function filterLine(data, line) {
     return data.filter(function (f) { return f.ProcessId == line });
 }
 
+function filterResponsible(data, responsible) {
+    return data.filter(function (f) { return f.Responsible != responsible });
+}
+
 function selectGroup() {
     if (groups.value == "Todos") {
         updateChartDays();
@@ -115,12 +140,8 @@ function groupByDate(data) {
 
 }
 
-function groupByFunction(data) {
-    console.log(Object.values(groupBy(data, "StationDescription")));
-}
-
 function generateDateTime(data) {
-    return data.map(function (d) {
+    var data = data.map(function (d) {
         d["Date"] = d.TimeStamp.slice(0, 10);
         d["TimeAmountMS"] = timeToMs(d.TimeAmount);
     });
@@ -138,7 +159,7 @@ function updateChartDays() {
 
 function updateLine() {
     groups.value = "Todos";
-    getServerData(day.value,  function (err, data) {
+    getServerData(day.value, function (err, data) {
         if (err)
             return console.error(err);
         rawData = JSON.parse(data);
@@ -154,9 +175,7 @@ function updateObjective() {
 }
 
 function toggleSelection() {
-    dataSeries.forEach(function (element) {
-        element.visible = !element.visible;
-    });
+    dataSeries.forEach(function (element) { element.visible = !element.visible; });
     chart.render();
 }
 
@@ -188,17 +207,13 @@ for (var i = 0; i < inputs.length; i++) {
     });
 }
 
-function filterByFunction(data) {
-    var pattern = /FA(\d[\s\.]\d?)\s?P\d/;
+function groupByFunction(data) {
+    var pattern = /(FA\d[\s\.]\d?)\s?P\d/;
     data.map(function (d) {
-        if (d.CellDescription == "FA0") {
-            d.Function = "FA0";
-        }
-        else if (pattern.test(d.StationDescription)) {
-            d.Function = d.StationDescription.match(pattern)[1].replace(" ", "");
-        }
-    });        
-    filteredData = Object.values(groupBy(data, "Function"))
-    console.log(filteredData)
-    return filteredData;
+        if (d.CellDescription == "FA0") 
+            d.Function = "FA0";        
+        else if (pattern.test(d.StationDescription)) 
+            d.Function = d.StationDescription.match(pattern)[1].replace(" ", "");        
+    });
+    return Object.values(groupBy(data, "Function"));    
 }

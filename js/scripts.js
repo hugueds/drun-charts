@@ -1,5 +1,7 @@
-var api = 'http://10.8.66.4/LTSApi/api/interferences?days=';
-var days = 7;
+var api2 = 'http://10.8.66.4/LTSApi/api/interferences?days=';
+var api = 'http://10.8.66.4/LTSApi/api/interferences?startDate={startDate}&endDate={endDate}';
+
+var filteredData = null;
 var line = null;
 var data = null;
 var rawData = null;
@@ -7,9 +9,11 @@ var responsibles = null;
 var functionStopTime = null;
 var dataSeries = null;
 var inputs = document.getElementsByTagName('input');
-var groups = document.getElementById("select-group");
-var line = document.getElementById("select-line");
+var groups = document.getElementById('select-group');
+var line = document.getElementById('select-line');
 var day = document.getElementById('select-day');
+var startDate = $("#start-date");
+var endDate = $("#end-date");
 var oce = 0;
 var calcOce = 0;
 var interferenceGroups = {
@@ -22,55 +26,40 @@ var interferenceGroups = {
     "Outros": ["IT SLA", "ENG PR", "ENG PP"]
 };
 
-var filteredData;
 
 window.onload = function () {
-    getServerData(days, function (err, data) {
-        if (err)
-            return console.error(err);
-        rawData = JSON.parse(data);
-        generateDataSeries(rawData, line.value = 0, generateChart);
-        filteredData = filterResponsible(rawData, "IND");
-        filteredData = groupByFunction(filteredData);
-        console.log(filteredData);
-        let series = new BarDataSerie(filteredData);
-        generateStopTimeChart(series);        
-    });
+    loadChart();
     generateOptions();
+}
 
+function loadChart() {
+    getServerData(function (err, data) {
+        if (err) return console.error(err);
+        rawData = JSON.parse(data);        
+        rawData = generateDateTime(rawData);
+        filteredData = filterData(rawData);        
+        generateDataSeries(filteredData, line.value, generateChart);
+    });
 }
 
 function DataSerie(dataSerie) {
+    if (!dataSerie.length) {
+        return;
+    }
     this.name = dataSerie[0][0].Responsible;
     this.type = "line";
     this.visible = true;
     this.showInLegend = true;
-    this.dataPoints = dataSerie.map(function (days) {
-        let times = [];
-        days.map(function (a) { times.push(a.TimeAmountMS) });
-        return { 
-            x: new Date(days[0].TimeStamp), 
-            y: times.reduce(function (a, b) { return (a + b) }) }})
-                    .sort(function (a, b) { return (a.x - b.x) });
+    this.dataPoints = dataSerie.map(generateDataPoints)
+        .sort(function (a, b) { return (a.x - b.x) });        
 }
 
-function BarDataSerie(data) {
-    this.type = "column";
-    this.showInLegend = true;
-    this.legendMarkColor = "Funções";
-    this.dataPoints = generateBarDataSeries(data);
-}
-
-function generateBarDataSeries(data) {
-    return data.map(f => {
-        let times = [];
-        times.push(f.TimeAmountMS)        
-        return {
-            label: f[0].Function,
-            y: 100 // times.reduce((a, b) => a.TimeAmountMS + b.TimeAmountMS)
-        }
-        
-    });
+function generateDataPoints(data) {
+    var times = data.map(function (a) { return a.TimeAmountMS }).reduce(function (a, b) { return (a + b) });
+    return {
+        x: new Date(data[0].TimeStamp),
+        y: times
+    }    
 }
 
 function getServerData(days, callback) {
@@ -81,47 +70,18 @@ function getServerData(days, callback) {
     });
 }
 
-function generateDataSeries(data, line, callback) {
-    data = filterResponsible(data, "IND");
-    responsibles = orderByResponsible(data)
-        .map(function (r) { return filterStopTime(r) })
-        .map(function (r) {
-            if (parseInt(line))
-                return filterLine(r, line)
-            return r;
-        })
-        .map(function (r) {
-            generateDateTime(r);
-            return Object.values(groupBy(r, "Date"));
-        });
+function generateDataSeries(data, line, callback) {    
+    data = filterLine(data, line);        
+    responsibles = groupByResponsible(data).map(groupByDate);               
     dataSeries = responsibles.map(function (resp) { return new DataSerie(resp) });
     callback(dataSeries);
 }
 
-function orderByResponsible(data) {
-    return Object.values(groupBy(data, 'Responsible'))
-}
 
-function filterStopTime(data) {
-    return data.filter(function (f) { return f.isProcessStopTime });
-}
-
-function filterProcessAndStopTime(data) {
-    return data.filter(function (f) { return f.isProcessStopTime || f.isStopTime });
-}
-
-function filterLine(data, line) {
-    return data.filter(function (f) { return f.ProcessId == line });
-}
-
-function filterResponsible(data, responsible) {
-    return data.filter(function (f) { return f.Responsible != responsible });
-}
 
 function selectGroup() {
     if (groups.value == "Todos") {
-        updateChartDays();
-        return;
+        return loadChart();        
     }
     var selected = interferenceGroups[groups.value];
     dataSeries.forEach(function (element) {
@@ -136,35 +96,12 @@ function selectGroup() {
     chart.render();
 }
 
-function groupByDate(data) {
-
-}
-
 function generateDateTime(data) {
-    var data = data.map(function (d) {
+    data.map(function (d) {
         d["Date"] = d.TimeStamp.slice(0, 10);
         d["TimeAmountMS"] = timeToMs(d.TimeAmount);
     });
-}
-
-function updateChartDays() {
-    groups.value = "Todos";
-    getServerData(day.value, function (err, data) {
-        if (err)
-            return console.error(err);
-        rawData = JSON.parse(data);
-        generateDataSeries(rawData, line.value, generateChart);
-    });
-}
-
-function updateLine() {
-    groups.value = "Todos";
-    getServerData(day.value, function (err, data) {
-        if (err)
-            return console.error(err);
-        rawData = JSON.parse(data);
-        generateDataSeries(rawData, line.value, generateChart);
-    });
+    return data;
 }
 
 function updateObjective() {
@@ -197,6 +134,15 @@ function generateOptions() {
     }
 }
 
+function getServerData(callback) {    
+    var url = api.replace('{startDate}', startDate.val()).replace('{endDate}', endDate.val());
+    request(url, function (err, response) {
+        if (err)
+            return callback(err);
+        return callback(null, response);
+    });
+}
+
 
 for (var i = 0; i < inputs.length; i++) {
     inputs[i].addEventListener('input', function (e) {
@@ -207,13 +153,3 @@ for (var i = 0; i < inputs.length; i++) {
     });
 }
 
-function groupByFunction(data) {
-    var pattern = /(FA\d[\s\.]\d?)\s?P\d/;
-    data.map(function (d) {
-        if (d.CellDescription == "FA0") 
-            d.Function = "FA0";        
-        else if (pattern.test(d.StationDescription)) 
-            d.Function = d.StationDescription.match(pattern)[1].replace(" ", "");        
-    });
-    return Object.values(groupBy(data, "Function"));    
-}

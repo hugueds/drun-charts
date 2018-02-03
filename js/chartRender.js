@@ -59,8 +59,7 @@ function generateChart(series) {
             e.dataSeries.visible = true;
         }
         chart.render();
-    }
-    
+    }    
     chart.render();
 }
 

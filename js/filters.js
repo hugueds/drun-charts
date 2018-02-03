@@ -39,3 +39,11 @@ function groupByResponsible(data) {
 function groupByDate(data) {
     return Object.values(groupBy(data, 'Date'))
 }
+
+function groupByFunction(data) {
+    return Object.values(groupBy(data, "Function"));
+}
+
+function orderByFunction(data) {
+    return data.sort(dynamicSort("Function"));
+}

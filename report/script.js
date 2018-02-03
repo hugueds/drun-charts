@@ -46,10 +46,6 @@ function generateFunction(data) {
     return data;
 }
 
-function groupByFunction(data) {
-    return Object.values(groupBy(data, "Function"));
-}
-
 function BarDataSerie(data) {
     this.type = "column";
     this.dataPoints = generateBarDataSeries(data);
@@ -72,9 +68,7 @@ function generateDateTime(data) {
     return data;
 }
 
-function orderByFunction(data) {
-    return data.sort(dynamicSort("Function"));
-}
+
 
 function generateTable(data) {
     $('.deviation-container').empty();

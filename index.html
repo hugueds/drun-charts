@@ -21,12 +21,12 @@
     </div>
 
     <div class="wrapper">
-        <div class="box">            
+        <div class="box">
             <label for="start-date">DATA INICIAL</label>
             <input type="text" id="start-date">
             <label for="end-date">DATA FINAL</label>
             <input type="text" id="end-date" />
-
+            <button onclick="loadChart()">BUSCAR</button>
         </div>
         <div class="box">
             <label for="select-line">TRECHO</label>
@@ -49,10 +49,10 @@
         </div>
     </div>
 
-    <div id="chartContainer" style="height: 35rem; max-width: 1080px; margin: 0px auto;"></div>
-
-    <!-- <div id="stopTimeChart" style="height: 38rem; max-width: 920px; margin: 0px auto;"></div> -->
-    <!-- <div style="width:100%; margin: 0 auto; display: flex; justify-content: center;"> -->
+    <div class="chart-wrapper">
+        <div id="chartContainer" style="height: 30rem;"></div>
+        <div id="stopTimeChart" style="height: 30rem"></div>
+    </div>
 
     <div class="wrapper">
         <button class="button toggle" onclick="toggleSelection()">Inverter Seleção</button>
@@ -62,19 +62,18 @@
         <button class="button" onclick="downloadChart()">Baixar</button>
         <button class="button" onclick="printChart()">Imprimir</button>
     </div>
+
     <div class="wrapper">
-        <button> EXIBIR DESVIOS </button>
+        <button onclick="toggleDeviationTable()"> EXIBIR DESVIOS </button>
     </div>
 
-    <div class="deviation-wrapper">
-
-    </div>
+    <div style="display:none;" id="deviation-container" class="deviation-container"></div>
 
     <!-- Polyfills for IE 11 -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-polyfill/6.26.0/polyfill.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/fetch-polyfill@0.8.2/fetch.min.js"></script>
-    <!-- <script src="lib/polyfill.min.js"></script>
-    <script src="lib/fetch.min.js"></script> -->
+    <!-- <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-polyfill/6.26.0/polyfill.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/fetch-polyfill@0.8.2/fetch.min.js"></script> -->
+    <script src="lib/polyfill.min.js"></script>
+    <script src="lib/fetch.min.js"></script>
 
     <script src="lib/jquery.min.js"></script>
     <script src="lib/jquery-ui.min.js"></script>
@@ -87,6 +86,15 @@
     <script src="js/scripts.js"></script>
 
     <script>
+
+        var yesterday = null;
+
+        function toggleDeviationTable() {            
+            var deviationTable = document.getElementById('deviation-container');
+            var display = deviationTable.style.display;
+            deviationTable.style.display = display == 'none' ? 'block' : 'none';            
+        }
+
         $(function () {
 
             var dateConfig = {
@@ -101,12 +109,12 @@
                 prevText: 'Anterior'
             }
 
-            var yesterday = (function (d) { d.setDate(d.getDate() - 1); return d })(new Date)
+            yesterday = getYesterday(new Date);            
+            
+            $("[id$=date]").datepicker(dateConfig).datepicker("setDate", yesterday);
 
-            $("[id$=date]").datepicker(dateConfig)
-                .datepicker("setDate", yesterday)
+        });
 
-        })
     </script>
 
 

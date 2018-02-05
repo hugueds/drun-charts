@@ -71,3 +71,8 @@ function dynamicSort(property) {
         return result * sortOrder;
     }
 }
+
+function getYesterday(d) {
+    d.setDate(d.getDate() - 1); 
+    return d;                 
+};

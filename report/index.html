@@ -59,8 +59,7 @@
 
             var yesterday = (function(d){ d.setDate(d.getDate()-1); return d})(new Date)
 
-            $("[id$=date]").datepicker(dateConfig)
-            .datepicker("setDate", yesterday)           
+            $("[id$=date]").datepicker(dateConfig).datepicker("setDate", yesterday);           
 
         })
         

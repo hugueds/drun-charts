@@ -4,16 +4,21 @@ var api = 'http://10.8.66.4/LTSApi/api/interferences?startDate={startDate}&endDa
 var filteredData = null;
 var line = null;
 var rawData = null;
+var groupedByFunction = null;
 var responsibles = null;
 var dataSeries = null;
+var dataReceived = false;
+
 var inputs = document.getElementsByTagName('input');
 var groups = document.getElementById('select-group');
 var line = document.getElementById('select-line');
 var day = document.getElementById('select-day');
 var startDate = $("#start-date");
 var endDate = $("#end-date");
+
 var oce = 0;
 var calcOce = 0;
+
 var interferenceGroups = {
     "Todos": [],
     "Qualidade": ["QUAL", "LTS", "QG FA5"],
@@ -33,33 +38,24 @@ window.onload = function () {
 function loadChart() {
     getServerData(function (err, data) {
         if (err) return console.error(err);
-        rawData = JSON.parse(data);        
+        rawData = JSON.parse(data);
+        dataReceived = rawData.length ? true : false;
+        if (!dataReceived) {
+            yesterday = getYesterday(yesterday);
+            $("[id$=date]").datepicker("setDate", yesterday);
+            loadChart();
+        }
         rawData = generateFunction(rawData);
         rawData = generateDateTime(rawData);
         rawData = orderByFunction(rawData);
-        filteredData = filterData(rawData);     
+        filteredData = filterData(rawData);
+        groupedByFunction = groupByFunction(filteredData);
+        console.log(groupedByFunction)
         generateTable(filteredData);
+        generateStopTimeChart(new BarDataSerie(groupedByFunction));
         generateDataSeries(filteredData, line.value, generateChart);
     });
 }
-
-/*
-
-  getServerData(function (err, data) {
-        if (err) return console.error(err);
-        rawData = JSON.parse(data);
-        rawData = generateDateTime(rawData);
-        rawData = generateFunction(rawData);
-        rawData = orderByFunction(rawData);
-        filteredData = filterData(rawData);
-        generateTable(filteredData);
-        filteredData = groupByFunction(filteredData);
-        generateStopTimeChart(new BarDataSerie(filteredData));
-    });
-
-*/
-
-
 
 function DataSerie(dataSerie) {
     if (!dataSerie.length) {
@@ -69,8 +65,7 @@ function DataSerie(dataSerie) {
     this.type = "line";
     this.visible = true;
     this.showInLegend = true;
-    this.dataPoints = dataSerie.map(generateDataPoints)
-        .sort(function (a, b) { return (a.x - b.x) });        
+    this.dataPoints = dataSerie.map(generateDataPoints).sort(function (a, b) { return (a.x - b.x) });
 }
 
 function generateDataPoints(data) {
@@ -78,29 +73,21 @@ function generateDataPoints(data) {
     return {
         x: new Date(data[0].TimeStamp),
         y: times
-    }    
+    }
 }
 
-function getServerData(days, callback) {
-    request(api + days, function (err, response) {
-        if (err)
-            return callback(err);
-        return callback(null, response);
-    });
-}
 
-function generateDataSeries(data, line, callback) {    
-    data = filterLine(data, line);        
-    responsibles = groupByResponsible(data).map(groupByDate);               
+function generateDataSeries(data, line, callback) {
+    groups.value = "Todos";
+    data = filterLine(data, line);
+    responsibles = groupByResponsible(data).map(groupByDate);
     dataSeries = responsibles.map(function (resp) { return new DataSerie(resp) });
     callback(dataSeries);
 }
 
-
-
 function selectGroup() {
     if (groups.value == "Todos") {
-        return loadChart();        
+        return loadChart();
     }
     var selected = interferenceGroups[groups.value];
     dataSeries.forEach(function (element) {
@@ -151,9 +138,17 @@ function generateOptions() {
         option.textContent = key;
         groups.appendChild(option);
     }
+    for (var i = 0; i < inputs.length; i++) {
+        inputs[i].addEventListener('input', function (e) {
+            var target = e.target.value
+            if (target > 59) {
+                e.target.value = 59;
+            }
+        });
+    }
 }
 
-function getServerData(callback) {    
+function getServerData(callback) {
     var url = api.replace('{startDate}', startDate.val()).replace('{endDate}', endDate.val());
     request(url, function (err, response) {
         if (err)
@@ -162,13 +157,11 @@ function getServerData(callback) {
     });
 }
 
-
-for (var i = 0; i < inputs.length; i++) {
-    inputs[i].addEventListener('input', function (e) {
-        var target = e.target.value
-        if (target > 59) {
-            e.target.value = 59;
-        }
+function getServerDataByDays(days, callback) {
+    request(api + days, function (err, response) {
+        if (err)
+            return callback(err);
+        return callback(null, response);
     });
 }
 
@@ -235,20 +228,3 @@ function generateFunction(data) {
     });
     return data;
 }
-
-/*
-function loadChart() {
-    getServerData(function (err, data) {
-        if (err) return console.error(err);
-        rawData = JSON.parse(data);
-        rawData = generateDateTime(rawData);
-        rawData = generateFunction(rawData);
-        rawData = orderByFunction(rawData);
-        filteredData = filterData(rawData);
-        generateTable(filteredData);
-        filteredData = groupByFunction(filteredData);
-        generateStopTimeChart(new BarDataSerie(filteredData));
-    });
-}
-
-*/
